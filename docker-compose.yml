@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:15
+    container_name: messenger_db
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6380:6379"
+
+    volumes:
+      - ./redisdata:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./redis/users.acl:/usr/local/etc/redis/users.acl
+
+    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-u", "redis://auth_user:password@localhost:6379", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+
+#  backend:
+#    build: .
+#    container_name: messenger_backend
+#    depends_on:
+#      - db
+#    ports:
+#      - "8000:8000"
+#    environment:
+#      DATABASE_URL: postgresql://messenger:messenger@db:5432/messenger
+#    volumes:
+#      - ./app:/app
+
+volumes:
+  postgres_data:
